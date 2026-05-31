@@ -48,7 +48,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 </head>
 <body>
 <div class="container">
-<div class="header"><h1>个人日志本</h1><p>记录每一天的珍贵瞬间</p></div>
+<div class="header"><h1>个人日志本</h1><p>记录每一天的珍贵瞬间</p><a href="#" id="logoutBtn" style="display:none;font-size:12px;color:#b0a698;text-decoration:none;margin-left:8px;vertical-align:middle" onclick="doLogout()">退出</a></div>
 <div class="card">
 <div class="form-group"><label>标题</label><input type="text" id="titleInput" placeholder="给你的日记起个标题..." maxlength="100"></div>
 <div class="form-group"><label>内容</label><textarea id="contentInput" placeholder="写下你今天的故事..."></textarea></div>
@@ -70,7 +70,7 @@ var API = '/api/entries';
 
 function loadEntries(){
   var el = document.getElementById('entryList');
-  return fetch(API).then(function(r){return r.json()}).then(function(data){
+  return fetch(API).then(function(r){if(r.status===401){window.location.href="/login.html";return};return r.json()}).then(function(data){
     renderEntries(data);
     return data;
   }).catch(function(err){
@@ -83,14 +83,14 @@ function saveEntry(title, content, photoFile){
   fd.append('title', title);
   fd.append('content', content);
   if (photoFile) fd.append('photo', photoFile);
-  return fetch(API, {method:'POST', body:fd}).then(function(r){
+  return fetch(API, {method:'POST', body:fd}).then(function(r){if(r.status===401){window.location.href='/login.html';return};
     if (!r.ok) return r.json().then(function(e){throw new Error(e.error)});
     return r.json();
   });
 }
 
 function deleteEntryApi(id){
-  return fetch(API+'/'+id, {method:'DELETE'}).then(function(r){
+  return fetch(API+'/'+id, {method:'DELETE'}).then(function(r){if(r.status===401){window.location.href='/login.html';return};
     if (!r.ok) throw new Error('删除失败');
     return r.json();
   });
@@ -251,6 +251,25 @@ saveBtn.addEventListener('click', function(){
 });
 
 // ---- 启动 ----
+
+// ---- Auth ----
+var logoutBtn = document.getElementById('logoutBtn');
+// Check if auth is enabled by trying to fetch entries
+fetch('/api/entries', {method:'HEAD'}).then(function(r) {
+  if (r.status === 401) {
+    window.location.href = '/login.html';
+  }
+}).catch(function(){});
+// Show logout button (only if auth is enabled - check cookie existence)
+if (document.cookie.indexOf('auth_token=') >= 0) {
+  logoutBtn.style.display = 'inline';
+}
+function doLogout() {
+  if (!confirm('确定要退出吗？')) return;
+  fetch('/api/logout', {method:'POST'}).then(function() {
+    window.location.href = '/login.html';
+  });
+}
 loadEntries();
 </script>
 </body>
