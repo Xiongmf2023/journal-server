@@ -1,0 +1,11 @@
+node_modules/
+data/entries.json
+uploads/*
+!uploads/.gitkeep
+tunnel_url.txt
+serveo_output.txt
+lt_output.txt
+ngrok_url.txt
+ngrok.yml
+*.log
+.DS_Store

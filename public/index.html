@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人日志本</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;background:#f5f3f0;color:#2d2a24;padding:16px;min-height:100vh}
+.container{max-width:640px;margin:0 auto}
+.header{text-align:center;padding:24px 0 20px}
+.header h1{font-size:28px;font-weight:700;color:#3d3529;letter-spacing:1px}
+.header p{font-size:14px;color:#9a9082;margin-top:4px}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#6b6256;margin-bottom:4px}
+.form-group input[type=text],.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid #e8e4de;border-radius:10px;font-size:15px;background:#fcfcfa;transition:border-color .2s;outline:none;font-family:inherit}
+.form-group input[type=text]:focus,.form-group textarea:focus{border-color:#b8a99a}
+.form-group textarea{resize:vertical;min-height:100px}
+.photo-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.photo-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f0ede8;border:1.5px dashed #c8beae;border-radius:10px;cursor:pointer;font-size:14px;color:#6b6256;transition:background .2s}
+.photo-btn:hover{background:#e8e3da}
+.photo-preview{position:relative;display:inline-block}
+.photo-preview img{height:64px;border-radius:8px;object-fit:cover;border:1px solid #e8e4de}
+.photo-clear{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#d9534f;color:#fff;border:2px solid #fff;font-size:12px;text-align:center;cursor:pointer;font-weight:700;line-height:16px}
+.submit-btn{width:100%;padding:12px;background:#5a4f42;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s}
+.submit-btn:disabled{background:#c8beae;cursor:not-allowed}
+.submit-btn:hover:not(:disabled){background:#4a3f34}
+.empty-state{text-align:center;padding:40px 20px;color:#b0a698}
+.loading-state{text-align:center;padding:40px 20px;color:#b0a698;font-size:15px}
+.entry-card{background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:14px}
+.entry-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.entry-title{font-size:17px;font-weight:600;color:#2d2a24;flex:1}
+.entry-date{font-size:12px;color:#b0a698;white-space:nowrap;margin-left:10px}
+.entry-body{font-size:14px;color:#6b6256;line-height:1.6;margin-bottom:10px}
+.entry-photo{margin-bottom:10px}
+.entry-photo img{width:100%;max-height:200px;object-fit:cover;border-radius:10px}
+.entry-actions{display:flex;gap:10px}
+.entry-actions button{flex:1;padding:8px;border:none;border-radius:10px;font-size:14px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-share{background:#eef2f7;color:#4a6fa5}
+.btn-share:hover{background:#e0e7f0}
+.btn-delete{background:#fdf0ef;color:#c74b47}
+.btn-delete:hover{background:#fbe3e1}
+.btn-expand{background:#f5f3f0;color:#6b6256;border:none;border-radius:8px;padding:4px 12px;font-size:13px;cursor:pointer;margin-bottom:10px}
+.btn-expand:hover{background:#ede8e2}
+@media(max-width:480px){body{padding:12px}.card,.entry-card{border-radius:12px}.header h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header"><h1>个人日志本</h1><p>记录每一天的珍贵瞬间</p></div>
+<div class="card">
+<div class="form-group"><label>标题</label><input type="text" id="titleInput" placeholder="给你的日记起个标题..." maxlength="100"></div>
+<div class="form-group"><label>内容</label><textarea id="contentInput" placeholder="写下你今天的故事..."></textarea></div>
+<div class="form-group">
+<label>照片（可选）</label>
+<div class="photo-upload">
+<label class="photo-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="10" rx="1.5"/><circle cx="5.5" cy="7" r="1.5"/><path d="M1.5 10.5L4.5 7.5 7.5 10.5 10.5 7.5 14.5 11.5"/></svg>上传照片<input type="file" accept="image/*" id="photoInput" style="display:none"></label>
+<div class="photo-preview" id="photoPreview" style="display:none"><img id="previewImg" src="" alt="预览"><div class="photo-clear" id="photoClearBtn">&times;</div></div>
+<span id="photoFileName" style="font-size:13px;color:#9a9082"></span>
+</div>
+</div>
+<button class="submit-btn" id="saveBtn" disabled>发表日记</button>
+</div>
+<div id="entryList"><div class="loading-state">加载中...</div></div>
+</div>
+<script>
+// ---- API 辅助 ----
+var API = '/api/entries';
+
+function loadEntries(){
+  var el = document.getElementById('entryList');
+  return fetch(API).then(function(r){return r.json()}).then(function(data){
+    renderEntries(data);
+    return data;
+  }).catch(function(err){
+    el.innerHTML = '<div class="empty-state"><p>加载失败，请确认服务器是否运行</p></div>';
+  });
+}
+
+function saveEntry(title, content, photoFile){
+  var fd = new FormData();
+  fd.append('title', title);
+  fd.append('content', content);
+  if (photoFile) fd.append('photo', photoFile);
+  return fetch(API, {method:'POST', body:fd}).then(function(r){
+    if (!r.ok) return r.json().then(function(e){throw new Error(e.error)});
+    return r.json();
+  });
+}
+
+function deleteEntryApi(id){
+  return fetch(API+'/'+id, {method:'DELETE'}).then(function(r){
+    if (!r.ok) throw new Error('删除失败');
+    return r.json();
+  });
+}
+
+function shareEntryApi(id, title, content){
+  var text = title + ' - ' + content + '\n——来自「个人日志本」';
+  if (navigator.share){
+    navigator.share({title:title, text:text}).catch(function(){});
+  } else if (navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      alert('已复制到剪贴板（模拟分享）');
+    }).catch(function(){
+      alert('分享失败，请手动复制');
+    });
+  } else {
+    prompt('复制以下内容进行分享：', text);
+  }
+}
+
+// ---- 渲染 ----
+function escapeHtml(text){
+  var d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function renderEntries(entries){
+  var el = document.getElementById('entryList');
+  if (!entries || entries.length === 0){
+    el.innerHTML = '<div class="empty-state"><p>还没有日记，开始写第一篇吧</p></div>';
+    return;
+  }
+  el.innerHTML = entries.map(function(e){
+    var preview = e.content.length > 50 ? e.content.substring(0,50)+'...' : e.content;
+    var photoHtml = e.photo ? '<div class="entry-photo"><img src="'+e.photo+'" alt="日记照片"></div>' : '';
+    var expandBtn = e.content.length > 50 ? '<br><button class="btn-expand" onclick="expandEntry('+e.id+')">展开全文</button>' : '';
+    return '<div class="entry-card" data-eid="'+e.id+'">' +
+      '<div class="entry-header"><div class="entry-title">'+escapeHtml(e.title)+'</div><div class="entry-date">'+e.createdAt+'</div></div>' +
+      '<div class="entry-body" data-expanded="0" data-full="'+escapeHtml(e.content)+'" data-preview="'+escapeHtml(preview)+'">'+escapeHtml(preview)+expandBtn+'</div>' +
+      photoHtml +
+      '<div class="entry-actions">' +
+        '<button class="btn-share" data-id="'+e.id+'" data-title="'+escapeHtml(e.title)+'" data-content="'+escapeHtml(e.content)+'">分享</button>' +
+        '<button class="btn-delete" data-id="'+e.id+'">删除</button>' +
+      '</div></div>';
+  }).join('');
+
+  // 绑定分享和删除事件
+  el.querySelectorAll('.btn-share').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      shareEntryApi(parseFloat(this.dataset.id), this.dataset.title, this.dataset.content);
+    });
+  });
+  el.querySelectorAll('.btn-delete').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      deleteEntry(parseFloat(this.dataset.id));
+    });
+  });
+}
+
+function expandEntry(id){
+  var el = document.querySelector('.entry-card[data-eid="'+id+'"]');
+  if (!el) return;
+  var body = el.querySelector('.entry-body');
+  var full = body.dataset.full;
+  var preview = body.dataset.preview;
+  var expanded = body.dataset.expanded === '1';
+  if (expanded){
+    body.innerHTML = preview + '<br><button class="btn-expand" onclick="expandEntry('+id+')">展开全文</button>';
+    body.dataset.expanded = '0';
+  } else {
+    body.innerHTML = full + '<br><button class="btn-expand" onclick="expandEntry('+id+')">收起</button>';
+    body.dataset.expanded = '1';
+  }
+}
+
+// ---- 删除 ----
+function deleteEntry(id){
+  var card = document.querySelector('.entry-card[data-eid="'+id+'"]');
+  var title = card ? card.querySelector('.entry-title').textContent : '这篇日记';
+  if (!confirm('确定要删除日记「'+title+'」吗？此操作不可恢复。')) return;
+  deleteEntryApi(id).then(function(){
+    loadEntries();
+  }).catch(function(err){
+    alert('删除失败：'+err.message);
+  });
+}
+
+// ---- 表单 ----
+var photoFile = null;
+var photoInput = document.getElementById('photoInput');
+var photoPreview = document.getElementById('photoPreview');
+var previewImg = document.getElementById('previewImg');
+var photoClearBtn = document.getElementById('photoClearBtn');
+var photoFileName = document.getElementById('photoFileName');
+var titleInput = document.getElementById('titleInput');
+var contentInput = document.getElementById('contentInput');
+var saveBtn = document.getElementById('saveBtn');
+
+// 启用/禁用保存按钮
+function updateSaveBtn(){
+  saveBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim());
+}
+titleInput.addEventListener('input', updateSaveBtn);
+contentInput.addEventListener('input', updateSaveBtn);
+
+photoInput.addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024){
+    alert('照片大小不能超过 8MB');
+    photoInput.value = '';
+    return;
+  }
+  photoFile = file;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    previewImg.src = ev.target.result;
+    photoPreview.style.display = 'inline-block';
+    photoFileName.textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+
+photoClearBtn.addEventListener('click', function(){
+  photoFile = null;
+  photoPreview.style.display = 'none';
+  previewImg.src = '';
+  photoInput.value = '';
+  photoFileName.textContent = '';
+});
+
+saveBtn.addEventListener('click', function(){
+  var title = titleInput.value.trim();
+  var content = contentInput.value.trim();
+  if (!title){ alert('请填写日记标题'); titleInput.focus(); return; }
+  if (!content){ alert('请填写日记内容'); contentInput.focus(); return; }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = '发表中...';
+
+  saveEntry(title, content, photoFile).then(function(){
+    titleInput.value = '';
+    contentInput.value = '';
+    photoFile = null;
+    photoPreview.style.display = 'none';
+    previewImg.src = '';
+    photoInput.value = '';
+    photoFileName.textContent = '';
+    saveBtn.textContent = '发表日记';
+    saveBtn.disabled = true; // 表单清空了
+    return loadEntries();
+  }).catch(function(err){
+    alert('发表失败：'+err.message);
+    saveBtn.textContent = '发表日记';
+    saveBtn.disabled = false;
+  });
+});
+
+// ---- 启动 ----
+loadEntries();
+</script>
+</body>
+</html>
