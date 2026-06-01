@@ -1,220 +1,441 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>娑擃亙姹夐弮銉ョ箶閺?/title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>个人日志本</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;background:#f5f3f0;color:#2d2a24;padding:16px;min-height:100vh}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  background:#f5f3f0;color:#2d2a24;padding:16px;min-height:100vh;-webkit-font-smoothing:antialiased
+}
 .container{max-width:640px;margin:0 auto}
-.header{text-align:center;padding:24px 0 20px}
-.header h1{font-size:28px;font-weight:700;color:#3d3529;letter-spacing:1px}
-.header p{font-size:14px;color:#9a9082;margin-top:4px}
-.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:16px}
+
+/* Header */
+.header{text-align:center;padding:24px 0 18px;position:relative}
+.header h1{font-size:26px;font-weight:700;color:#3d3529;letter-spacing:1px}
+.header .sub{font-size:13px;color:#b8ae9e;margin-top:2px}
+.header .logout-btn{
+  position:absolute;top:24px;right:0;font-size:13px;color:#b8ae9e;cursor:pointer;
+  text-decoration:none;padding:4px 8px;border-radius:6px;display:none
+}
+.header .logout-btn:hover{background:#ede8e2}
+
+/* Card */
+.card,.entry-card{
+  background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:16px
+}
+
+/* Form */
 .form-group{margin-bottom:14px}
-.form-group label{display:block;font-size:13px;font-weight:600;color:#6b6256;margin-bottom:4px}
-.form-group input[type=text],.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid #e8e4de;border-radius:10px;font-size:15px;background:#fcfcfa;transition:border-color .2s;outline:none;font-family:inherit}
-.form-group input[type=text]:focus,.form-group textarea:focus{border-color:#b8a99a}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#6b6256;margin-bottom:5px}
+.form-group input,.form-group textarea{
+  width:100%;padding:11px 14px;border:1.5px solid #e8e4de;border-radius:10px;
+  font-size:15px;background:#fcfcfa;outline:none;font-family:inherit;transition:border-color .2s
+}
+.form-group input:focus,.form-group textarea:focus{border-color:#b8a99a}
 .form-group textarea{resize:vertical;min-height:100px}
-.photo-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.photo-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f0ede8;border:1.5px dashed #c8beae;border-radius:10px;cursor:pointer;font-size:14px;color:#6b6256;transition:background .2s}
-.photo-btn:hover{background:#e8e3da}
-.photo-preview{position:relative;display:inline-block}
-.photo-preview img{height:64px;border-radius:8px;object-fit:cover;border:1px solid #e8e4de}
-.photo-clear{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#d9534f;color:#fff;border:2px solid #fff;font-size:12px;text-align:center;cursor:pointer;font-weight:700;line-height:16px}
-.submit-btn{width:100%;padding:12px;background:#5a4f42;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s}
-.submit-btn:disabled{background:#c8beae;cursor:not-allowed}
+
+.submit-btn{
+  width:100%;padding:12px;background:#5a4f42;color:#fff;border:none;border-radius:12px;
+  font-size:16px;font-weight:600;cursor:pointer;transition:background .2s
+}
 .submit-btn:hover:not(:disabled){background:#4a3f34}
-.empty-state{text-align:center;padding:40px 20px;color:#b0a698}
-.loading-state{text-align:center;padding:40px 20px;color:#b0a698;font-size:15px}
-.entry-card{background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:14px}
-.entry-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.entry-title{font-size:17px;font-weight:600;color:#2d2a24;flex:1}
-.entry-date{font-size:12px;color:#b0a698;white-space:nowrap;margin-left:10px}
-.entry-body{font-size:14px;color:#6b6256;line-height:1.6;margin-bottom:10px}
-.entry-photo{margin-bottom:10px}
-.entry-photo img{width:100%;max-height:200px;object-fit:cover;border-radius:10px}
-.entry-actions{display:flex;gap:10px}
-.entry-actions button{flex:1;padding:8px;border:none;border-radius:10px;font-size:14px;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:4px}
+.submit-btn:disabled{background:#c8beae;cursor:not-allowed}
+
+/* Entry List */
+.empty-state,.loading-state{text-align:center;padding:40px 20px;color:#b0a698;font-size:15px}
+.entry-card{padding:18px 20px}
+.entry-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px}
+.entry-title{font-size:17px;font-weight:600;color:#2d2a24;line-height:1.4}
+.entry-date{font-size:12px;color:#b8ae9e;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.entry-body{font-size:14px;color:#6b6256;line-height:1.7;margin-bottom:10px;word-wrap:break-word}
+.entry-body .full-content{display:none}
+.entry-body.expanded .preview{display:none}
+.entry-body.expanded .full-content{display:inline}
+.expand-btn{
+  display:inline-block;background:none;border:none;color:#9a9082;font-size:13px;
+  cursor:pointer;padding:2px 0;margin-top:2px
+}
+.expand-btn:hover{color:#6b6256}
+
+.entry-actions{display:flex;gap:10px;margin-top:4px}
+.entry-actions button{
+  flex:1;padding:9px;border:none;border-radius:10px;font-size:14px;cursor:pointer;
+  transition:background .2s;display:flex;align-items:center;justify-content:center;gap:5px
+}
 .btn-share{background:#eef2f7;color:#4a6fa5}
 .btn-share:hover{background:#e0e7f0}
 .btn-delete{background:#fdf0ef;color:#c74b47}
 .btn-delete:hover{background:#fbe3e1}
-.btn-expand{background:#f5f3f0;color:#6b6256;border:none;border-radius:8px;padding:4px 12px;font-size:13px;cursor:pointer;margin-bottom:10px}
-.btn-expand:hover{background:#ede8e2}
-@media(max-width:480px){body{padding:12px}.card,.entry-card{border-radius:12px}.header h1{font-size:24px}}
+
+/* Modal Overlay */
+.modal-overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(45,42,36,0.45);z-index:1000;
+  align-items:center;justify-content:center;padding:20px
+}
+.modal-overlay.active{display:flex}
+.modal-box{
+  background:#fff;border-radius:18px;padding:28px 24px 20px;
+  width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.15)
+}
+.modal-box h3{font-size:18px;font-weight:600;color:#3d3529;margin-bottom:6px}
+.modal-box p{font-size:14px;color:#9a9082;margin-bottom:18px;line-height:1.5}
+.modal-box input[type=password]{
+  width:100%;padding:12px 14px;border:1.5px solid #e8e4de;border-radius:10px;
+  font-size:16px;background:#fcfcfa;outline:none;transition:border-color .2s
+}
+.modal-box input[type=password]:focus{border-color:#b8a99a}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.modal-actions button{
+  flex:1;padding:11px;border:none;border-radius:10px;font-size:15px;
+  font-weight:600;cursor:pointer;transition:background .2s
+}
+.modal-cancel{background:#f0ede8;color:#6b6256}
+.modal-cancel:hover{background:#e8e3da}
+.modal-confirm{background:#c74b47;color:#fff}
+.modal-confirm:hover{background:#b33e3a}
+.modal-confirm:disabled{background:#d9a09e;cursor:not-allowed}
+.modal-error{color:#c74b47;font-size:13px;margin-top:8px;display:none}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:#3d3529;color:#fff;padding:12px 24px;border-radius:12px;
+  font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.15);
+  z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none
+}
+.toast.show{opacity:1}
+
+@media(max-width:480px){
+  body{padding:12px}
+  .card,.entry-card{border-radius:12px;padding:16px}
+  .header h1{font-size:22px}
+  .header{padding:18px 0 14px}
+  .modal-box{padding:24px 20px 16px}
+}
 </style>
 </head>
 <body>
+
 <div class="container">
-<div class="header"><h1>娑擃亙姹夐弮銉ョ箶閺?/h1><p>鐠佹澘缍嶅В蹇庣婢垛晝娈戦悵宥堝惞閻剟妫?/p><a href="#" id="logoutBtn" style="display:none;font-size:12px;color:#b0a698;text-decoration:none;margin-left:8px;vertical-align:middle" onclick="doLogout()">闁偓閸?/a></div>
+
+<!-- Header -->
+<div class="header">
+  <h1>📖 个人日志本</h1>
+  <div class="sub">记录每一天</div>
+  <a class="logout-btn" id="logoutBtn" onclick="doLogout()">退出登录</a>
+</div>
+
+<!-- New Entry Form -->
 <div class="card">
-<div class="form-group"><label>閺嶅洭顣?/label><input type="text" id="titleInput" placeholder="缂佹瑤缍橀惃鍕）鐠佹媽鎹ｆ稉顏呯垼妫?.." maxlength="100"></div>
-<div class="form-group"><label>閸愬懎顔?/label><textarea id="contentInput" placeholder="閸愭瑤绗呮担鐘辩矕婢垛晝娈戦弫鍛皑..."></textarea></div>
+  <div class="form-group">
+    <label>标题</label>
+    <input type="text" id="titleInput" placeholder="给你的日记取个标题..." maxlength="100">
+  </div>
+  <div class="form-group">
+    <label>内容</label>
+    <textarea id="contentInput" placeholder="写下今天的想法和感受..."></textarea>
+  </div>
+  <button class="submit-btn" id="saveBtn" disabled>发布日记</button>
+</div>
 
+<!-- Entry List -->
+<div id="entryList"><div class="loading-state">加载中...</div></div>
 
 </div>
+
+<!-- Delete Password Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h3>确认删除</h3>
+    <p id="deleteModalTitle">请输入登录密码以删除这篇日记</p>
+    <input type="password" id="deletePasswordInput" placeholder="请输入登录密码" autocomplete="off">
+    <div class="modal-error" id="deleteModalError">密码错误，请重试</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeDeleteModal()">取消</button>
+      <button class="modal-confirm" id="deleteConfirmBtn" onclick="confirmDelete()">删除</button>
+    </div>
+  </div>
 </div>
-<button class="submit-btn" id="saveBtn" disabled>閸欐垼銆冮弮銉唶</button>
-</div>
-<div id="entryList"><div class="loading-state">閸旂姾娴囨稉?..</div></div>
-</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
+// ===== State =====
+var pendingDeleteId = null;
 var API = '/api/entries';
 
-function loadEntries(){
-  var el = document.getElementById('entryList');
-  return fetch(API).then(function(r){if(r.status===401){window.location.href='/login.html';return};return r.json()}).then(function(data){
-    renderEntries(data);
-    return data;
-  }).catch(function(err){
-    el.innerHTML = '<div class="empty-state"><p>鍔犺浇澶辫触锛岃纭鏈嶅姟鍣ㄦ槸鍚﹁繍琛?/p></div>';
-  });
+// ===== Toast =====
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
 
-function saveEntry(title, content){
-  var fd = new FormData();
-  fd.append('title', title);
-  fd.append('content', content);
-  return fetch(API, {method:'POST', body:fd}).then(function(r){
-    if(r.status===401){window.location.href='/login.html';return};
-    if (!r.ok) return r.json().then(function(e){throw new Error(e.error)});
-    return r.json();
-  });
-}
-
-function shareEntryApi(id, title, content){
-  var text = title + ' - ' + content + '\n鈥斺€旀潵鑷€屼釜浜烘棩蹇楁湰銆?;
-  if (navigator.share){
-    navigator.share({title:title, text:text}).catch(function(){});
-  } else if (navigator.clipboard){
-    navigator.clipboard.writeText(text).then(function(){
-      alert('宸插鍒跺埌鍓创鏉匡紙妯℃嫙鍒嗕韩锛?);
-    }).catch(function(){
-      alert('鍒嗕韩澶辫触锛岃鎵嬪姩澶嶅埗');
+// ===== Share =====
+function shareEntry(title, content) {
+  var text = title + '\n' + content + '\n\n—— 来自 个人日志本';
+  if (navigator.share) {
+    navigator.share({ title: title, text: text }).catch(function(){});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('已复制到剪贴板（模拟分享）');
+    }).catch(function() {
+      fallbackCopy(text);
     });
   } else {
-    prompt('澶嶅埗浠ヤ笅鍐呭杩涜鍒嗕韩锛?, text);
+    fallbackCopy(text);
   }
 }
 
-function escapeHtml(text){
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制到剪贴板（模拟分享）');
+  } catch(e) {
+    showToast('分享失败，请手动复制');
+  }
+  document.body.removeChild(ta);
+}
+
+// ===== Escape HTML =====
+function esc(text) {
   var d = document.createElement('div');
   d.textContent = text;
   return d.innerHTML;
 }
 
-function renderEntries(entries){
+// ===== Format Date =====
+function formatDate(ts) {
+  var d = new Date(ts);
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// ===== Load Entries =====
+function loadEntries() {
   var el = document.getElementById('entryList');
-  if (!entries || entries.length === 0){
-    el.innerHTML = '<div class="empty-state"><p>杩樻病鏈夋棩璁帮紝寮€濮嬪啓绗竴绡囧惂</p></div>';
+  fetch(API)
+    .then(function(r) {
+      if (r.status === 401) { window.location.href = '/login.html'; return; }
+      return r.json();
+    })
+    .then(function(data) {
+      if (!data) return;
+      renderEntries(data);
+    })
+    .catch(function() {
+      el.innerHTML = '<div class="empty-state"><p>加载失败，请刷新页面重试</p></div>';
+    });
+}
+
+// ===== Render Entries =====
+function renderEntries(entries) {
+  var el = document.getElementById('entryList');
+  if (!entries || entries.length === 0) {
+    el.innerHTML = '<div class="empty-state"><p>还没有日记，写一篇吧 📝</p></div>';
     return;
   }
-  el.innerHTML = entries.map(function(e){
-    var preview = e.content.length > 50 ? e.content.substring(0,50)+'...' : e.content;
-    var expandBtn = e.content.length > 50 ? '<br><button class="btn-expand" onclick="expandEntry('+e.id+')">灞曞紑鍏ㄦ枃</button>' : '';
-    return '<div class="entry-card" data-eid="'+e.id+'">' +
-      '<div class="entry-header"><div class="entry-title">'+escapeHtml(e.title)+'</div><div class="entry-date">'+e.createdAt+'</div></div>' +
-      '<div class="entry-body" data-expanded="0" data-full="'+escapeHtml(e.content)+'" data-preview="'+escapeHtml(preview)+'">'+escapeHtml(preview)+expandBtn+'</div>' +
-      '<div class="entry-actions">' +
-        '<button class="btn-share" data-id="'+e.id+'" data-title="'+escapeHtml(e.title)+'" data-content="'+escapeHtml(e.content)+'">鍒嗕韩</button>' +
-        '<button class="btn-delete" data-id="'+e.id+'">鍒犻櫎</button>' +
-      '</div></div>';
-  }).join('');
 
-  el.querySelectorAll('.btn-share').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      shareEntryApi(parseFloat(this.dataset.id), this.dataset.title, this.dataset.content);
-    });
-  });
-  el.querySelectorAll('.btn-delete').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      deleteEntry(parseFloat(this.dataset.id));
-    });
-  });
+  el.innerHTML = entries.map(function(e) {
+    var preview = e.content.length > 50 ? e.content.substring(0, 50) + '...' : e.content;
+    var full = e.content;
+    var needsExpand = e.content.length > 50;
+    var expandHtml = needsExpand
+      ? '<br><button class="expand-btn" onclick="toggleExpand(' + e.id + ')">展开全文</button>'
+      : '';
+    var expandFullHtml = needsExpand
+      ? '<br><button class="expand-btn" onclick="toggleExpand(' + e.id + ')">收起</button>'
+      : '';
+
+    return '<div class="entry-card" data-id="' + e.id + '">'
+      + '<div class="entry-header">'
+        + '<div class="entry-title">' + esc(e.title) + '</div>'
+        + '<div class="entry-date">' + e.createdAt + '</div>'
+      + '</div>'
+      + '<div class="entry-body" data-eid="' + e.id + '">'
+        + '<span class="preview">' + esc(preview) + '</span>' + expandHtml
+        + '<span class="full-content" style="display:none">' + esc(full) + '</span>' + expandFullHtml
+      + '</div>'
+      + '<div class="entry-actions">'
+        + '<button class="btn-share" onclick="shareEntry(' + "'" + esc(e.title) + "'" + ',' + "'" + esc(e.content) + "'" + ')">📤 分享</button>'
+        + '<button class="btn-delete" onclick="openDeleteModal(' + e.id + ')">🗑️ 删除</button>'
+      + '</div>'
+    + '</div>';
+  }).join('');
 }
 
-function expandEntry(id){
-  var el = document.querySelector('.entry-card[data-eid="'+id+'"]');
-  if (!el) return;
-  var body = el.querySelector('.entry-body');
-  var full = body.dataset.full;
-  var preview = body.dataset.preview;
-  var expanded = body.dataset.expanded === '1';
-  if (expanded){
-    body.innerHTML = preview + '<br><button class="btn-expand" onclick="expandEntry('+id+')">灞曞紑鍏ㄦ枃</button>';
-    body.dataset.expanded = '0';
-  } else {
-    body.innerHTML = full + '<br><button class="btn-expand" onclick="expandEntry('+id+')">鏀惰捣</button>';
-    body.dataset.expanded = '1';
+// ===== Toggle Expand =====
+function toggleExpand(id) {
+  var cards = document.querySelectorAll('.entry-card');
+  for (var i = 0; i < cards.length; i++) {
+    if (parseFloat(cards[i].dataset.id) === id) {
+      var body = cards[i].querySelector('.entry-body');
+      var preview = body.querySelector('.preview');
+      var full = body.querySelector('.full-content');
+      var isExpanded = full.style.display !== 'none';
+      preview.style.display = isExpanded ? '' : 'none';
+      full.style.display = isExpanded ? 'none' : '';
+      // Update expand/collapse button text
+      var btns = body.querySelectorAll('.expand-btn');
+      for (var j = 0; j < btns.length; j++) {
+        btns[j].textContent = isExpanded ? '展开全文' : '收起';
+      }
+      break;
+    }
   }
 }
 
-function deleteEntry(id){
-  var card = document.querySelector('.entry-card[data-eid="'+id+'"]');
-  var title = card ? card.querySelector('.entry-title').textContent : '杩欑瘒鏃ヨ';
-  var password = prompt('璇疯緭鍏ョ櫥褰曞瘑鐮佷互鍒犻櫎銆?+title+'銆嶏細');
-  if (password === null) return;
-  if (!password.trim()) { alert('瀵嗙爜涓嶈兘涓虹┖'); return; }
-  fetch('/api/entries/'+id, {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:password})}).then(function(r){
-    if (r.ok) return r.json();
-    return r.json().then(function(e){throw new Error(e.error)});
-  }).then(function(){
-    loadEntries();
-  }).catch(function(err){
-    alert('鍒犻櫎澶辫触锛?+err.message);
-    loadEntries();
+// ===== Create Entry =====
+function createEntry(title, content) {
+  return fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: title, content: content })
+  }).then(function(r) {
+    if (r.status === 401) { window.location.href = '/login.html'; return; }
+    if (!r.ok) return r.json().then(function(e) { throw new Error(e.error); });
+    return r.json();
   });
 }
 
+// ===== Delete Password Modal =====
+function openDeleteModal(id) {
+  pendingDeleteId = id;
+  var card = document.querySelector('.entry-card[data-id="' + id + '"]');
+  var title = card ? card.querySelector('.entry-title').textContent : '日记';
+  document.getElementById('deleteModalTitle').textContent = '请输入登录密码以删除「' + title + '」';
+  document.getElementById('deletePasswordInput').value = '';
+  document.getElementById('deleteModalError').style.display = 'none';
+  document.getElementById('deleteConfirmBtn').disabled = false;
+  document.getElementById('deleteConfirmBtn').textContent = '删除';
+  document.getElementById('deleteModal').classList.add('active');
+  setTimeout(function() {
+    document.getElementById('deletePasswordInput').focus();
+  }, 100);
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('active');
+  pendingDeleteId = null;
+}
+
+function confirmDelete() {
+  var password = document.getElementById('deletePasswordInput').value;
+  if (!password) {
+    document.getElementById('deleteModalError').textContent = '请输入密码';
+    document.getElementById('deleteModalError').style.display = 'block';
+    return;
+  }
+
+  var btn = document.getElementById('deleteConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '验证中...';
+  document.getElementById('deleteModalError').style.display = 'none';
+
+  fetch('/api/entries/' + pendingDeleteId, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: password })
+  })
+  .then(function(r) {
+    if (r.ok) return r.json();
+    return r.json().then(function(e) { throw new Error(e.error); });
+  })
+  .then(function() {
+    closeDeleteModal();
+    showToast('日记已删除');
+    loadEntries();
+  })
+  .catch(function(err) {
+    document.getElementById('deleteModalError').textContent = err.message || '密码错误，请重试';
+    document.getElementById('deleteModalError').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '删除';
+    document.getElementById('deletePasswordInput').value = '';
+    document.getElementById('deletePasswordInput').focus();
+  });
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    closeDeleteModal();
+  }
+});
+
+// Enter key in password modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDeleteModal();
+  if (e.key === 'Enter' && document.getElementById('deleteModal').classList.contains('active')) {
+    confirmDelete();
+  }
+});
+
+// ===== Save Button =====
 var titleInput = document.getElementById('titleInput');
 var contentInput = document.getElementById('contentInput');
 var saveBtn = document.getElementById('saveBtn');
 
-function updateSaveBtn(){
+function updateSaveBtn() {
   saveBtn.disabled = !(titleInput.value.trim() && contentInput.value.trim());
 }
 titleInput.addEventListener('input', updateSaveBtn);
 contentInput.addEventListener('input', updateSaveBtn);
 
-saveBtn.addEventListener('click', function(){
+saveBtn.addEventListener('click', function() {
   var title = titleInput.value.trim();
   var content = contentInput.value.trim();
-  if (!title){ alert('璇峰～鍐欐棩璁版爣棰?); titleInput.focus(); return; }
-  if (!content){ alert('璇峰～鍐欐棩璁板唴瀹?); contentInput.focus(); return; }
+  if (!title) { showToast('请输入标题'); titleInput.focus(); return; }
+  if (!content) { showToast('请输入内容'); contentInput.focus(); return; }
 
   saveBtn.disabled = true;
-  saveBtn.textContent = '鍙戣〃涓?..';
+  saveBtn.textContent = '发布中...';
 
-  saveEntry(title, content).then(function(){
-    titleInput.value = '';
-    contentInput.value = '';
-    saveBtn.textContent = '鍙戣〃鏃ヨ';
-    saveBtn.disabled = true;
-    return loadEntries();
-  }).catch(function(err){
-    alert('鍙戣〃澶辫触锛?+err.message);
-    saveBtn.textContent = '鍙戣〃鏃ヨ';
-    saveBtn.disabled = false;
-  });
+  createEntry(title, content)
+    .then(function() {
+      titleInput.value = '';
+      contentInput.value = '';
+      saveBtn.textContent = '发布日记';
+      saveBtn.disabled = true;
+      showToast('日记已发布');
+      return loadEntries();
+    })
+    .catch(function(err) {
+      showToast('发布失败：' + err.message);
+      saveBtn.textContent = '发布日记';
+      saveBtn.disabled = false;
+    });
 });
 
-var logoutBtn = document.getElementById('logoutBtn');
-fetch('/api/entries', {method:'HEAD'}).then(function(r) {
-  if (r.status === 401) { window.location.href = '/login.html'; }
-}).catch(function(){});
+// ===== Logout =====
 if (document.cookie.indexOf('auth_token=') >= 0) {
-  logoutBtn.style.display = 'inline';
+  document.getElementById('logoutBtn').style.display = 'inline';
 }
+
 function doLogout() {
-  if (!confirm('纭畾瑕侀€€鍑哄悧锛?)) return;
-  fetch('/api/logout', {method:'POST'}).then(function() {
+  if (!confirm('确定要退出登录吗？')) return;
+  fetch('/api/logout', { method: 'POST' }).then(function() {
     window.location.href = '/login.html';
   });
 }
 
+// ===== Init =====
 loadEntries();
 </script>
+
 </body>
 </html>
