@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3456;
 
 // ===== Data Storage =====
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const DATA_FILE = path.join(DATA_DIR, 'entries.json');
 
@@ -131,6 +131,72 @@ app.delete('/api/entries/:id', (req, res) => {
   res.json({ success: true });
 });
 
+
+// GET /api/export - export entries as TXT file within a date range
+app.get('/api/export', (req, res) => {
+  const entries = loadEntries();
+
+  // Parse date range from query params
+  const fromStr = req.query.from;
+  const toStr = req.query.to;
+
+  let filtered = entries;
+  if (fromStr || toStr) {
+    filtered = entries.filter(e => {
+      // e.createdAt format: "YYYY-MM-DD HH:MM"
+      const datePart = e.createdAt.substring(0, 10);
+      if (fromStr && datePart < fromStr) return false;
+      if (toStr && datePart > toStr) return false;
+      return true;
+    });
+  }
+
+  // Sort by date ascending (oldest first) for readable export
+  filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  // Build TXT content
+  let txt = '';
+  if (fromStr || toStr) {
+    txt += `个人日志本 - 导出报告\n`;
+    txt += `时间范围: ${fromStr || '不限'} ~ ${toStr || '不限'}\n`;
+    txt += `导出时间: ${new Date().toLocaleString('zh-CN', { hour12: false })}\n`;
+    txt += `共 ${filtered.length} 篇日记\n`;
+    txt += `${'='.repeat(50)}\n\n`;
+  }
+
+  filtered.forEach((e, i) => {
+    txt += `【第 ${i + 1} 篇】\n`;
+    txt += `标题: ${e.title}\n`;
+    txt += `日期: ${e.createdAt}\n`;
+    txt += `${'-'.repeat(30)}\n`;
+    txt += `${e.content}\n\n`;
+    txt += `${'='.repeat(50)}\n\n`;
+  });
+
+  if (filtered.length === 0) {
+    txt += '该时间段内没有日记记录。\n';
+  }
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="journal_export_${fromStr || 'all'}_${toStr || 'all'}.txt"`);
+  res.send(txt);
+});
+
+// GET /api/data/download - download full data file (backup)
+app.get('/api/data/download', (req, res) => {
+  if (!fs.existsSync(DATA_FILE)) {
+    return res.status(404).json({ error: '没有数据文件' });
+  }
+  const data = loadEntries();
+  const jsonStr = JSON.stringify(data, null, 2);
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="journal_backup_' + dateStr + '.json"');
+  res.send(jsonStr);
+});
+
 // ===== Error Handler =====
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
@@ -171,3 +237,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Journal Server started on port ${PORT}`);
   console.log(`  Password protection: ${JOURNAL_PASSWORD ? 'ON' : 'OFF'}`);
 });
+

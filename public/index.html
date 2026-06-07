@@ -144,6 +144,31 @@ body{
   <button class="submit-btn" id="saveBtn" disabled>发布日记</button>
 </div>
 
+<!-- Export Card -->
+<div class="card" id="exportCard">
+  <div class="form-group" style="margin-bottom:10px">
+    <label>📥 导出日记为 TXT</label>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div style="flex:1;min-width:120px">
+      <label style="font-size:12px;color:#9a9082;display:block;margin-bottom:3px">开始日期</label>
+      <input type="date" id="exportFrom" style="width:100%;padding:9px 12px;border:1.5px solid #e8e4de;border-radius:10px;font-size:14px;background:#fcfcfa;outline:none;font-family:inherit;cursor:pointer">
+    </div>
+    <div style="flex:1;min-width:120px">
+      <label style="font-size:12px;color:#9a9082;display:block;margin-bottom:3px">结束日期</label>
+      <input type="date" id="exportTo" style="width:100%;padding:9px 12px;border:1.5px solid #e8e4de;border-radius:10px;font-size:14px;background:#fcfcfa;outline:none;font-family:inherit;cursor:pointer">
+    </div>
+    <div style="flex-shrink:0;align-self:flex-end">
+      <button id="exportBtn" style="padding:9px 20px;background:#5a6b5a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap">导出 TXT</button>
+    </div>
+  </div>
+    <div style="font-size:12px;color:#b8ae9e;margin-top:8px">不选日期范围则导出全部日记</div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid #ede8e2">
+    <button id="backupBtn" style="padding:7px 16px;background:#f0ede8;color:#5a4f42;border:none;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s" onclick="doBackup()">💾 备份全部数据 (JSON)</button>
+    <span style="font-size:11px;color:#c8beae;margin-left:8px">部署前先备份，防止数据丢失</span>
+  </div>
+</div>
+
 <!-- Entry List -->
 <div id="entryList"><div class="loading-state">加载中...</div></div>
 
@@ -435,7 +460,89 @@ function doLogout() {
 
 // ===== Init =====
 loadEntries();
+// ===== Backup Data =====
+function doBackup() {
+  var btn = document.getElementById('backupBtn');
+  var orig = btn.textContent;
+  btn.textContent = '下载中...';
+  btn.disabled = true;
+
+  fetch('/api/data/download')
+    .then(function(r) {
+      if (r.status === 401) { window.location.href = '/login.html'; return; }
+      if (!r.ok) throw new Error('备份失败');
+      return r.blob();
+    })
+    .then(function(blob) {
+      if (!blob) return;
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      var d = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var dateStr = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+      link.download = 'journal_backup_' + dateStr + '.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      showToast('数据备份已下载');
+    })
+    .catch(function(err) {
+      showToast(err.message || '备份失败');
+    })
+    .finally(function() {
+      btn.textContent = orig;
+      btn.disabled = false;
+    });
+}
+// ===== Export to TXT =====
+document.getElementById('exportBtn').addEventListener('click', doExport);
+
+function doExport() {
+  var from = document.getElementById('exportFrom').value;
+  var to = document.getElementById('exportTo').value;
+
+  var params = [];
+  if (from) params.push('from=' + from);
+  if (to) params.push('to=' + to);
+
+  var url = '/api/export' + (params.length > 0 ? '?' + params.join('&') : '');
+
+  var btn = document.getElementById('exportBtn');
+  var origText = btn.textContent;
+  btn.textContent = '导出中...';
+  btn.disabled = true;
+
+  fetch(url)
+    .then(function(r) {
+      if (r.status === 401) { window.location.href = '/login.html'; return; }
+      if (!r.ok) throw new Error('导出失败');
+      return r.blob();
+    })
+    .then(function(blob) {
+      if (!blob) return;
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      var dateStr = from || 'all';
+      if (to) dateStr += '_' + to;
+      link.download = 'journal_export_' + dateStr + '.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      showToast('导出成功');
+    })
+    .catch(function(err) {
+      showToast(err.message || '导出失败，请重试');
+    })
+    .finally(function() {
+      btn.textContent = origText;
+      btn.disabled = false;
+    });
+}
 </script>
 
 </body>
 </html>
+
+
